@@ -1,0 +1,484 @@
+-- // Moza.vs Packet Lagger V2 (Green Theme + Fully Functional When Collapsed) //
+
+local Players      = game:GetService("Players")
+local UIS          = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService   = game:GetService("RunService")
+local HttpService  = game:GetService("HttpService")
+local SoundService = game:GetService("SoundService")
+
+local LP = Players.LocalPlayer
+local CONFIG_FILE = "MozaVSPacketLaggerV2_Config.json"
+
+-- ============ THEME (ULTRA-POLISHED LUXURY DARK GREEN) ============
+local ACCENT_RED   = Color3.fromRGB(35, 200, 75)
+local ACCENT_BRIGHT= Color3.fromRGB(50, 255, 95)
+local ACCENT_DARK  = Color3.fromRGB(12, 85, 30)
+local BG_BLACK     = Color3.fromRGB(4, 8, 5)
+local BG_PANEL     = Color3.fromRGB(8, 15, 10)
+local BG_INPUT     = Color3.fromRGB(12, 24, 15)
+local BG_HOVER     = Color3.fromRGB(20, 40, 25)
+local TEXT_WHITE   = Color3.fromRGB(240, 255, 242)
+local TEXT_DIM     = Color3.fromRGB(120, 170, 130)
+local TEXT_GLOW    = Color3.fromRGB(100, 255, 120)
+local STROKE_RED   = Color3.fromRGB(20, 80, 35)
+
+-- ============ SFX ============
+local sfxFolder = Instance.new("Folder")
+sfxFolder.Name = "MozaVSSFXV2"
+sfxFolder.Parent = SoundService
+
+local function makeSfx(name, id, vol, pitch)
+    local s = Instance.new("Sound")
+    s.Name = name
+    s.SoundId = "rbxassetid://" .. tostring(id)
+    s.Volume = vol or 0.5
+    s.PlaybackSpeed = pitch or 1
+    s.Parent = sfxFolder
+    return s
+end
+
+local SFX = {
+    Click   = makeSfx("Click",    9114282417, 0.35, 1.0),
+    Hover   = makeSfx("Hover",    9114294822, 0.15, 1.4),
+    Start   = makeSfx("Start",    9114300981, 0.55, 0.9),
+    Stop    = makeSfx("Stop",     9114303932, 0.45, 0.75),
+    Toggle  = makeSfx("Toggle",   9114307441, 0.40, 1.2),
+    Keybind = makeSfx("Keybind",  9114310303, 0.40, 1.6),
+    Saved   = makeSfx("Saved",    9114313755, 0.40, 1.3),
+    Error   = makeSfx("Error",    9114316718, 0.40, 0.6),
+}
+
+local function playSfx(name)
+    local s = SFX[name]
+    if not s then return end
+    s:Stop()
+    s:Play()
+end
+
+-- ============ BILLBOARD GUI (ABOVE HEAD, FOLLOWS CAMERA) ============
+local billboardGui = Instance.new("BillboardGui")
+billboardGui.Name = "MozaVSPacketLaggerV2Billboard"
+billboardGui.Size = UDim2.new(0, 220, 0, 48)
+billboardGui.StudsOffset = Vector3.new(0, 2.8, 0)
+billboardGui.AlwaysOnTop = true
+billboardGui.Parent = LP:WaitForChild("PlayerGui")
+
+local BbFrame = Instance.new("Frame", billboardGui)
+BbFrame.Size = UDim2.new(1, 0, 1, 0)
+BbFrame.BackgroundColor3 = BG_BLACK
+BbFrame.BackgroundTransparency = 0.2
+BbFrame.BorderSizePixel = 0
+Instance.new("UICorner", BbFrame).CornerRadius = UDim.new(0, 12)
+
+local BbStroke = Instance.new("UIStroke", BbFrame)
+BbStroke.Color = ACCENT_RED
+BbStroke.Thickness = 1.5
+
+local BbTitle = Instance.new("TextLabel", BbFrame)
+BbTitle.Size = UDim2.new(1, 0, 0.5, 0)
+BbTitle.BackgroundTransparency = 1
+BbTitle.Text = "MOZA.VS PACKET LAGGER V2"
+BbTitle.Font = Enum.Font.GothamBlack
+BbTitle.TextSize = 10
+BbTitle.TextColor3 = TEXT_WHITE
+
+local BbDiscord = Instance.new("TextLabel", BbFrame)
+BbDiscord.Position = UDim2.new(0, 0, 0.5, 0)
+BbDiscord.Size = UDim2.new(1, 0, 0.5, 0)
+BbDiscord.BackgroundTransparency = 1
+BbDiscord.Text = "discord.gg/T8pHNUs4ET"
+BbDiscord.Font = Enum.Font.GothamBold
+BbDiscord.TextSize = 10
+BbDiscord.TextColor3 = TEXT_GLOW
+
+RunService.RenderStepped:Connect(function()
+    local char = LP.Character
+    if char then
+        local head = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+        if head then
+            billboardGui.Adornee = head
+        end
+    end
+end)
+
+-- ============ MAIN GUI ============
+local gui = Instance.new("ScreenGui")
+gui.Name = "MozaVSPacketLaggerV2"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.DisplayOrder = 999
+gui.Parent = LP:WaitForChild("PlayerGui")
+
+local Main = Instance.new("Frame", gui)
+Main.Size = UDim2.new(0, 250, 0, 194)
+Main.Position = UDim2.new(0.5, -125, 0.5, -97)
+Main.BackgroundColor3 = BG_BLACK
+Main.BackgroundTransparency = 0.2
+Main.BorderSizePixel = 0
+Main.ClipsDescendants = true 
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 18)
+
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Color = STROKE_RED
+MainStroke.Thickness = 1.5
+MainStroke.Transparency = 0.1
+MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+local MainGrad = Instance.new("UIGradient", Main)
+MainGrad.Color = ColorSequence.new(BG_BLACK, Color3.fromRGB(5, 15, 8))
+MainGrad.Rotation = 135
+
+local BorderFrame = Instance.new("Frame", Main)
+BorderFrame.Size = UDim2.new(1, 2, 1, 2)
+BorderFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+BorderFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+BorderFrame.BackgroundTransparency = 1
+BorderFrame.ZIndex = 0
+
+local BorderGrad = Instance.new("UIGradient", BorderFrame)
+BorderGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.0, Color3.fromRGB(10, 40, 20)),
+    ColorSequenceKeypoint.new(0.25, Color3.fromRGB(30, 140, 60)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(100, 255, 130)),
+    ColorSequenceKeypoint.new(0.75, Color3.fromRGB(30, 140, 60)),
+    ColorSequenceKeypoint.new(1.0, Color3.fromRGB(10, 40, 20)),
+})
+BorderGrad.Rotation = 0
+
+-- ============ CONTROL (START BUTTON - PLACED OUTSIDE BODY SO IT STAYS VISIBLE WHEN MINIMIZED) ============
+local Toggle = Instance.new("TextButton", Main)
+Toggle.Name = "Toggle"
+Toggle.Size = UDim2.new(1, -24, 0, 36)
+Toggle.Position = UDim2.new(0, 12, 0, 44)
+Toggle.BackgroundColor3 = BG_INPUT
+Toggle.BorderSizePixel = 0
+Toggle.Text = ""
+Toggle.AutoButtonColor = false
+Toggle.ZIndex = 15
+Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 8)
+
+local ToggleGrad = Instance.new("UIGradient", Toggle)
+ToggleGrad.Color = ColorSequence.new(BG_INPUT, Color3.fromRGB(15, 30, 20))
+ToggleGrad.Rotation = 135
+
+local ToggleStroke = Instance.new("UIStroke", Toggle)
+ToggleStroke.Color = STROKE_RED
+ToggleStroke.Thickness = 1.5
+
+local ToggleLabel = Instance.new("TextLabel", Toggle)
+ToggleLabel.Size = UDim2.new(1, 0, 1, 0)
+ToggleLabel.BackgroundTransparency = 1
+ToggleLabel.Text = "DISABLED"
+ToggleLabel.Font = Enum.Font.GothamBlack
+ToggleLabel.TextSize = 13
+ToggleLabel.TextColor3 = TEXT_WHITE
+ToggleLabel.TextXAlignment = Enum.TextXAlignment.Center
+ToggleLabel.TextYAlignment = Enum.TextYAlignment.Center
+ToggleLabel.ZIndex = 16
+
+-- ============ TOP BAR ============
+local TitleBar = Instance.new("Frame", Main)
+TitleBar.Size = UDim2.new(1, 0, 0, 42)
+TitleBar.BackgroundTransparency = 1
+TitleBar.ZIndex = 10
+
+local Title = Instance.new("TextLabel", TitleBar)
+Title.Size = UDim2.new(1, -50, 1, 0)
+Title.Position = UDim2.new(0, 14, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Moza.vs Packet Lagger V2"
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 13
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextYAlignment = Enum.TextYAlignment.Center
+Title.TextColor3 = TEXT_WHITE
+Title.ZIndex = 11
+
+local CollapseBtn = Instance.new("TextButton", TitleBar)
+CollapseBtn.Size = UDim2.new(0, 24, 0, 24)
+CollapseBtn.Position = UDim2.new(1, -34, 0.5, -12)
+CollapseBtn.BackgroundColor3 = BG_PANEL
+CollapseBtn.BackgroundTransparency = 0.2
+CollapseBtn.BorderSizePixel = 0
+CollapseBtn.Text = "−"
+CollapseBtn.Font = Enum.Font.GothamBlack
+CollapseBtn.TextSize = 16
+CollapseBtn.TextColor3 = TEXT_WHITE
+CollapseBtn.AutoButtonColor = false
+CollapseBtn.ZIndex = 12
+Instance.new("UICorner", CollapseBtn).CornerRadius = UDim.new(0, 8)
+
+-- ============ BODY CONTAINER (EXTRA SETTINGS) ============
+local Body = Instance.new("Frame", Main)
+Body.Name = "BodyContainer"
+Body.Position = UDim2.new(0, 0, 0, 86)
+Body.Size = UDim2.new(1, 0, 1, -86)
+Body.BackgroundTransparency = 1
+Body.ZIndex = 2
+Body.ClipsDescendants = true
+
+local Pad = Instance.new("UIPadding", Body)
+Pad.PaddingTop = UDim.new(0, 2)
+Pad.PaddingBottom = UDim.new(0, 10)
+Pad.PaddingLeft = UDim.new(0, 12)
+Pad.PaddingRight = UDim.new(0, 12)
+
+-- ============ KEYBIND BUTTON ============
+local KeyBtn = Instance.new("TextButton", Body)
+KeyBtn.Position = UDim2.new(0, 0, 0, 4)
+KeyBtn.Size = UDim2.new(1, 0, 0, 28)
+KeyBtn.BackgroundColor3 = BG_PANEL
+KeyBtn.BorderSizePixel = 0
+KeyBtn.Text = "Key: G / ButtonY"
+KeyBtn.Font = Enum.Font.GothamBlack
+KeyBtn.TextSize = 11
+KeyBtn.TextColor3 = TEXT_WHITE
+KeyBtn.AutoButtonColor = false
+KeyBtn.ZIndex = 3
+Instance.new("UICorner", KeyBtn).CornerRadius = UDim.new(0, 8)
+
+local KeyStroke = Instance.new("UIStroke", KeyBtn)
+KeyStroke.Color = STROKE_RED
+KeyStroke.Thickness = 1
+
+-- ============ AUTO-STEAL TOGGLE ============
+local StealToggleBtn = Instance.new("TextButton", Body)
+StealToggleBtn.Position = UDim2.new(0, 0, 0, 38)
+StealToggleBtn.Size = UDim2.new(1, 0, 0, 38)
+StealToggleBtn.BackgroundColor3 = BG_PANEL
+StealToggleBtn.BorderSizePixel = 0
+StealToggleBtn.Text = "AUTO-STEAL: OFF"
+StealToggleBtn.Font = Enum.Font.GothamBlack
+StealToggleBtn.TextSize = 12
+StealToggleBtn.TextColor3 = TEXT_DIM
+StealToggleBtn.AutoButtonColor = false
+StealToggleBtn.ZIndex = 3
+Instance.new("UICorner", StealToggleBtn).CornerRadius = UDim.new(0, 8)
+
+local StealStroke = Instance.new("UIStroke", StealToggleBtn)
+StealStroke.Color = STROKE_RED
+StealStroke.Thickness = 1.5
+
+-- ============ FOOTER ============
+local HintLabel = Instance.new("TextLabel", Body)
+HintLabel.Size = UDim2.new(1, 0, 0, 14)
+HintLabel.Position = UDim2.new(0, 0, 0, 82)
+HintLabel.BackgroundTransparency = 1
+HintLabel.Text = "discord.gg/T8pHNUs4ET"
+HintLabel.Font = Enum.Font.GothamBlack
+HintLabel.TextSize = 9
+HintLabel.TextColor3 = TEXT_GLOW
+HintLabel.TextXAlignment = Enum.TextXAlignment.Center
+HintLabel.ZIndex = 3
+
+-- ============ LOGIC & MODULE ============
+local SRC = [==[
+local RS = game:GetService("ReplicatedStorage")
+local Event
+do
+local ok, net = pcall(function()
+return RS:WaitForChild("Packages"):WaitForChild("Net")
+end)
+if ok and net then
+local kids = net:GetChildren()
+Event = kids[230]
+end
+end
+local state = { running = false, thread = nil }
+local intensity = 10000
+local function start()
+if state.running then return end
+if not Event then return end
+state.running = true
+local payload = table.create(intensity, function() end)
+state.thread = task.spawn(function()
+while state.running do
+for _ = 1, 3 do
+pcall(function()
+if Event then Event:FireServer(payload) end
+end)
+end
+task.wait(0.01)
+end
+end)
+end
+local function stop()
+state.running = false
+if state.thread then
+pcall(task.cancel, state.thread)
+state.thread = nil
+end
+end
+return {
+start = start,
+stop = stop,
+toggle = function() if state.running then stop() else start() end end,
+isRunning = function() return state.running end,
+}
+]==]
+
+local loader = coroutine.create(function()
+    local chunk = loadstring(SRC)
+    if not chunk then return end
+    local ok, api = pcall(chunk)
+    if ok and type(api) == "table" then
+        _G.__ALT = api
+    end
+end)
+coroutine.resume(loader)
+local api = _G.__ALT
+_G.__ALT = nil
+
+local active = false
+local autoStealActive = false
+local isBinding = false
+local toggleKey = Enum.KeyCode.G
+local toggleGamepadKey = Enum.KeyCode.ButtonY
+
+-- Border Glow Animation
+RunService.RenderStepped:Connect(function(dt)
+    local speed = active and 160 or 60
+    BorderGrad.Rotation = (BorderGrad.Rotation + speed * dt) % 360
+end)
+
+local function setActive(state)
+    active = state
+    if state then
+        Toggle.BackgroundColor3 = ACCENT_BRIGHT
+        ToggleGrad.Color = ColorSequence.new(ACCENT_RED, ACCENT_BRIGHT)
+        ToggleGrad.Rotation = 0
+        ToggleStroke.Color = Color3.fromRGB(255, 255, 255)
+        ToggleLabel.Text = "ENABLED"
+        ToggleLabel.TextColor3 = BG_BLACK
+        if api and api.start then pcall(api.start) end
+        playSfx("Start")
+    else
+        Toggle.BackgroundColor3 = BG_INPUT
+        ToggleGrad.Color = ColorSequence.new(BG_INPUT, Color3.fromRGB(15, 30, 20))
+        ToggleGrad.Rotation = 135
+        ToggleStroke.Color = STROKE_RED
+        ToggleLabel.Text = "DISABLED"
+        ToggleLabel.TextColor3 = TEXT_WHITE
+        if api and api.stop then pcall(api.stop) end
+        playSfx("Stop")
+    end
+end
+
+Toggle.MouseButton1Click:Connect(function()
+    playSfx("Click")
+    setActive(not active)
+end)
+
+StealToggleBtn.MouseButton1Click:Connect(function()
+    autoStealActive = not autoStealActive
+    StealToggleBtn.Text = autoStealActive and "AUTO-STEAL: ON" or "AUTO-STEAL: OFF"
+    StealToggleBtn.TextColor3 = autoStealActive and TEXT_GLOW or TEXT_DIM
+    StealToggleBtn.BackgroundColor3 = autoStealActive and ACCENT_DARK or BG_PANEL
+    StealStroke.Color = autoStealActive and ACCENT_BRIGHT or STROKE_RED
+    playSfx("Toggle")
+end)
+
+-- Auto-Steal background listener
+task.spawn(function()
+    while true do
+        if autoStealActive then
+            local char = LP.Character
+            local hasStealItem = false
+            if char then
+                for _, child in ipairs(char:GetChildren()) do
+                    if child:IsA("Tool") then
+                        local n = string.lower(child.Name)
+                        if n:find("steal") or n:find("cash") or n:find("bag") or n:find("loot") or n:find("brainrot") then
+                            hasStealItem = true
+                        end
+                    end
+                end
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                if humanoid and humanoid.Health > 0 and humanoid.WalkSpeed < 25 then
+                    hasStealItem = true
+                end
+            end
+            if hasStealItem then
+                if not active then setActive(true) end
+            else
+                if active then setActive(false) end
+            end
+        end
+        task.wait(0.2)
+    end
+end)
+
+KeyBtn.MouseButton1Click:Connect(function()
+    if isBinding then return end
+    isBinding = true
+    KeyBtn.Text = "Press key..."
+    KeyBtn.TextColor3 = ACCENT_BRIGHT
+    playSfx("Keybind")
+end)
+
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if isBinding then
+        if input.UserInputType == Enum.UserInputType.Keyboard then
+            isBinding = false
+            toggleKey = input.KeyCode
+            KeyBtn.Text = "Key: " .. toggleKey.Name
+            KeyBtn.TextColor3 = TEXT_WHITE
+            playSfx("Keybind")
+        elseif input.UserInputType == Enum.UserInputType.Gamepad1 then
+            isBinding = false
+            toggleGamepadKey = input.KeyCode
+            KeyBtn.Text = "Key: " .. toggleGamepadKey.Name
+            KeyBtn.TextColor3 = TEXT_WHITE
+            playSfx("Keybind")
+        end
+        return
+    end
+
+    if input.KeyCode == toggleKey or input.KeyCode == toggleGamepadKey then
+        playSfx("Toggle")
+        setActive(not active)
+    end
+end)
+
+-- Dragging
+local dragging, dragStart, startPos
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- Minimize (Keeps the Start Button fully exposed and functional)
+local collapsed = false
+CollapseBtn.MouseButton1Click:Connect(function()
+    collapsed = not collapsed
+    playSfx("Click")
+    if collapsed then
+        CollapseBtn.Text = "+"
+        TweenService:Create(Main, TweenInfo.new(0.3), {Size = UDim2.new(0, 250, 0, 92)}):Play()
+    else
+        CollapseBtn.Text = "−"
+        TweenService:Create(Main, TweenInfo.new(0.3), {Size = UDim2.new(0, 250, 0, 194)}):Play()
+    end
+end)
